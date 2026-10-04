@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eff7ff">
+  <title>地铁内涝风险评估</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17324f;
+      --muted: #6d8299;
+      --line: #e2edf6;
+      --blue: #3388d6;
+      --blue-dark: #2168ad;
+      --blue-soft: #eff7ff;
+      --green: #258b70;
+      --amber: #c98625;
+      --orange: #db6d39;
+      --red: #d84f58;
+      --shadow: 0 12px 36px rgba(47, 94, 137, .08);
+      font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 85% 0%, rgba(209, 234, 255, .65), transparent 38rem),
+        #f5f9fd;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .page { max-width: 1440px; margin: 0 auto; padding: 28px 34px 36px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 25px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid; width: 42px; height: 42px; place-items: center; border-radius: 14px;
+      color: #fff; background: linear-gradient(145deg, #59afe9, #2d78c6);
+      box-shadow: 0 7px 16px rgba(51, 136, 214, .23);
+    }
+    .brand-mark svg { width: 25px; height: 25px; }
+    .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .notice {
+      display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px;
+      border: 1px solid #f0dfb8; border-radius: 999px; background: #fffaf0;
+      color: #8f6925; font-size: 12px; line-height: 1.5;
+    }
+    .notice svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .intro { margin: 0 0 20px; }
+    .eyebrow { margin: 0 0 6px; color: var(--blue); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.03em; }
+    .intro-copy { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .workspace { display: grid; grid-template-columns: minmax(300px, 355px) minmax(0, 1fr); align-items: start; gap: 20px; }
+    .panel, .card {
+      border: 1px solid rgba(219, 232, 243, .95);
+      border-radius: 17px; background: rgba(255, 255, 255, .94);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 21px; }
+    .panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 15px; }
+    .panel-heading h2, .section-title { margin: 0; font-size: 15px; font-weight: 750; }
+    .panel-heading p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .small-badge { border: 1px solid #d9eafa; padding: 5px 8px; border-radius: 8px; color: #4786bc; background: #f3f9ff; font-size: 10px; white-space: nowrap; }
+    .section-label { display: flex; align-items: center; gap: 8px; margin: 19px 0 10px; color: #61788f; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+    .section-label::after { height: 1px; flex: 1; background: var(--line); content: ""; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 12px; }
+    .field { min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 6px; color: #526d85; font-size: 11px; font-weight: 650; }
+    .unit { color: #91a2b3; font-size: 10px; font-weight: 400; }
+    input, select {
+      width: 100%; height: 38px; padding: 0 10px; border: 1px solid #dce8f2;
+      border-radius: 9px; outline: none; color: var(--ink); background: #fbfdff; font-size: 12px;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    input:focus, select:focus { border-color: #82b9e8; background: #fff; box-shadow: 0 0 0 3px rgba(66, 149, 217, .12); }
+    input[type="number"] { appearance: textfield; }
+    .help { margin: 5px 1px 0; color: #899bad; font-size: 10px; line-height: 1.5; }
+    .weather-box { padding: 12px; border: 1px solid #dfedf8; border-radius: 12px; background: #f6fbff; }
+    .weather-box .field > .field { display: flex; gap: 8px; }
+    .weather-box input { min-width: 0; }
+    .button {
+      display: inline-flex; justify-content: center; align-items: center; gap: 7px;
+      min-height: 38px; padding: 0 12px; border: 1px solid #cfe2f2; border-radius: 9px;
+      color: #2c75b4; background: #fff; font-size: 11px; font-weight: 700;
+      transition: background .15s ease, transform .15s ease;
+    }
+    .button:hover { background: #f1f8ff; }
+    .button:active { transform: translateY(1px); }
+    .button.primary { width: 100%; margin-top: 18px; border-color: #3b8ad0; color: #fff; background: linear-gradient(120deg, #53a6df, #347ec5); box-shadow: 0 7px 15px rgba(51, 136, 214, .19); }
+    .button.primary:hover { background: linear-gradient(120deg, #4697d3, #2c70b7); }
+    .button svg { width: 15px; height: 15px; }
+    .weather-state { min-height: 17px; margin: 8px 1px 0; color: #778da2; font-size: 10px; line-height: 1.5; }
+    .weather-state.error { color: #bd4a4f; }
+    .weather-state.success { color: #21805f; }
+    .right-column { display: grid; gap: 17px; }
+    .card { padding: 19px 21px; }
+    .risk-card { overflow: hidden; position: relative; }
+    .risk-card::before { position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--risk-color, var(--green)); content: ""; }
+    .risk-overview { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .risk-heading { display: flex; align-items: center; gap: 12px; }
+    .risk-symbol { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 14px; color: var(--risk-color, var(--green)); background: var(--risk-tint, #e9f7f2); }
+    .risk-symbol svg { width: 24px; height: 24px; }
+    .risk-label { color: var(--muted); font-size: 11px; }
+    .risk-level { margin-top: 3px; color: var(--risk-color, var(--green)); font-size: 23px; font-weight: 800; letter-spacing: .02em; }
+    .risk-description { margin: 8px 0 0; color: #667e94; font-size: 11px; line-height: 1.65; }
+    .score { min-width: 84px; padding: 10px 12px; border: 1px solid var(--risk-border, #d6eee5); border-radius: 12px; background: var(--risk-tint, #f3faf7); text-align: center; }
+    .score strong { display: block; color: var(--risk-color, var(--green)); font-size: 22px; line-height: 1.1; }
+    .score span { color: #7a8fa2; font-size: 10px; }
+    .factor-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
+    .factor-chip { padding: 6px 9px; border: 1px solid #e4edf4; border-radius: 999px; color: #5d7388; background: #f9fbfd; font-size: 10px; }
+    .factor-chip.positive { border-color: #d8eee6; color: #328369; background: #f2faf6; }
+    .scoring-note { margin: 10px 0 0; color: #8294a5; font-size: 10px; line-height: 1.6; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .section-head h2 { margin: 0; font-size: 14px; }
+    .section-head p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .legend { display: inline-flex; align-items: center; gap: 6px; color: #8093a5; font-size: 10px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+    .chart-wrap { width: 100%; }
+    #trend-chart { display: block; width: 100%; height: 202px; overflow: visible; }
+    .chart-grid { stroke: #edf2f6; stroke-width: 1; }
+    .chart-axis { fill: #90a0af; font-size: 10px; font-family: inherit; }
+    .chart-fill { fill: url(#chartGradient); }
+    .chart-line { fill: none; stroke: #4c9bd8; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+    .chart-point { fill: #fff; stroke: #4c9bd8; stroke-width: 2.5; }
+    .diagram-wrap { overflow: hidden; border: 1px solid #e7f0f7; border-radius: 12px; background: linear-gradient(180deg, #f8fcff, #fff); }
+    #station-diagram { display: block; width: 100%; height: 258px; }
+    .diagram-label { fill: #58748e; font-family: inherit; font-size: 11px; }
+    .diagram-small { fill: #8297aa; font-family: inherit; font-size: 9px; }
+    .diagram-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; color: #7a8fa2; font-size: 10px; line-height: 1.6; }
+    .diagram-note svg { width: 14px; height: 14px; flex: 0 0 auto; color: #6ea4cf; }
+    .risk-disclaimer { display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; border: 1px solid #f0e3c6; border-radius: 11px; color: #826b40; background: #fffaf0; font-size: 10px; line-height: 1.65; }
+    .risk-disclaimer svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; }
+    footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 17px; color: #94a4b3; font-size: 10px; }
+    @media (max-width: 900px) {
+      .page { padding: 22px 18px 30px; }
+      .workspace { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); gap: 14px; }
+      .panel, .card { padding: 16px; }
+      .risk-overview { align-items: flex-start; }
+    }
+    @media (max-width: 700px) {
+      .page { padding: 16px 12px 25px; }
+      .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 20px; }
+      .notice { font-size: 10px; }
+      .workspace { grid-template-columns: 1fr; }
+      .right-column { grid-row: 1; }
+      .panel { grid-row: 2; }
+      #trend-chart { height: 175px; }
+      #station-diagram { height: 220px; }
+      footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 20h10M9 17l-2 3m8-3 2 3M6.5 15.5c.7.9 2 1.5 5.5 1.5s4.8-.6 5.5-1.5V6.8c0-2-1.4-3.3-3.3-3.3h-4.4C7.9 3.5 6.5 4.8 6.5 6.8v8.7Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 7.5h6M9 11.5h.01M15 11.5h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <div><div class="brand-name">城市安全 · 风险研判</div><div class="brand-sub">METRO FLOOD RISK STUDIO</div></div>
+      </div>
+      <div class="notice">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 21 20H3L12 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v4.5m0 3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        学习与演示原型 · 评估结果仅供参考
+      </div>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">地铁内涝风险评估</p>
+      <h1>让风险判断更直观</h1>
+      <p class="intro-copy">填写站点和天气情况，查看参考风险等级、情景变化趋势与简化疏散示意。</p>
+    </section>
+
+    <div class="workspace">
+      <aside class="panel" aria-label="评估信息设置">
+        <div class="panel-heading">
+          <div><h2>评估信息</h2><p>修改参数后，评估结果会同步更新。</p></div>
+          <span class="small-badge">单站评估</span>
+        </div>
+
+        <div class="section-label">天气情况</div>
+        <div class="weather-box">
+          <div class="field full">
+            <label for="city">城市</label>
+            <div class="field">
+              <input id="city" type="text" value="北京" maxlength="60" autocomplete="address-level2" aria-label="天气查询城市">
+              <button id="weather-button" class="button" type="button" title="从天气服务获取未来降雨参考">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.6 6M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                查天气
+              </button>
+            </div>
+            <p class="help">可选联网查询未来降雨；也可直接填写下方天气参数。</p>
+            <div id="weather-status" class="weather-state" role="status" aria-live="polite">天气数据未连接，可手动填写。</div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="rain-intensity">降雨强度 <span class="unit">毫米/小时</span></label>
+              <input id="rain-intensity" type="number" min="0" max="300" step="0.1" value="40" required>
+            </div>
+            <div class="field">
+              <label for="rain-duration">持续时间 <span class="unit">小时</span></label>
+              <input id="rain-duration" type="number" min="0" max="72" step="0.1" value="4" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">车站与地质环境</div>
+        <div class="field-grid">
+          <div class="field full">
+            <label for="station-name">车站名称</label>
+            <input id="station-name" type="text" value="示例地铁站" maxlength="60" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="depth">车站埋深 <span class="unit">米</span></label>
+            <input id="depth" type="number" min="0" max="100" step="0.5" value="18" required>
+          </div>
+          <div class="field">
+            <label for="entrances">出入口数量 <span class="unit">个</span></label>
+            <input id="entrances" type="number" min="1" max="20" step="1" value="3" required>
+          </div>
+          <div class="field">
+            <label for="terrain">周边地势/汇水</label>
+            <select id="terrain">
+              <option value="0">地势较高、汇水少</option>
+              <option value="1" selected>一般城市环境</option>
+              <option value="2">低洼或临近水体</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="soil">土壤透水情况</label>
+            <select id="soil">
+              <option value="0">透水性较好</option>
+              <option value="1" selected>一般</option>
+              <option value="2">透水性较差</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="drainage">排水能力</label>
+            <select id="drainage">
+              <option value="0">较弱</option>
+              <option value="1" selected>一般</option>
+              <option value="2">较强</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="barrier">防汛设施</label>
+            <select id="barrier">
+              <option value="0">较少或不明确</option>
+              <option value="1" selected>一般</option>
+              <option value="2">较完善</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="passengers">当前站内客流 <span class="unit">人（用于示意）</span></label>
+            <input id="passengers" type="number" min="0" max="50000" step="50" value="1800" required>
+          </div>
+        </div>
+        <button id="evaluate-button" class="button primary" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          重新评估
+        </button>
+      </aside>
+
+      <section class="right-column" aria-label="风险评估结果">
+        <article id="risk-card" class="card risk-card" aria-live="polite">
+          <div class="risk-overview">
+            <div>
+              <div class="risk-heading">
+                <div class="risk-symbol" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 21 20H3L12 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v4.5m0 3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </div>
+                <div><div class="risk-label">当前情景参考等级</div><div id="risk-level" class="risk-level">—</div></div>
+              </div>
+              <p id="risk-description" class="risk-description"></p>
+            </div>
+            <div class="score"><strong id="risk-score">0</strong><span>参考分值</span></div>
+          </div>
+          <div id="factor-list" class="factor-list" aria-label="主要评估因素"></div>
+          <p class="scoring-note">演示规则：降雨、持续时间、埋深、出入口、地势和土壤透水性加分；排水与防汛设施减分。总分 0–3 为低、4–7 为中、8–11 为高、12 分及以上为很高；这些阈值并非行业标准。</p>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div><h2>风险情景变化</h2><p>假设当前降雨条件持续，展示未来数小时的规则推演，不是天气预报。</p></div>
+            <span class="legend"><span class="legend-dot"></span>参考风险分值</span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="trend-chart" viewBox="0 0 760 202" role="img" aria-label="未来数小时风险情景变化图"></svg>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-head">
+            <div><h2>车站内涝与客流疏散示意</h2><p>示意水位变化方向和通往出入口的客流方向。</p></div>
+            <span id="station-label" class="small-badge">单站示意</span>
+          </div>
+          <div class="diagram-wrap">
+            <svg id="station-diagram" viewBox="0 0 760 258" role="img" aria-label="简化地铁车站内涝与客流疏散示意图"></svg>
+          </div>
+          <div class="diagram-note">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>箭头仅表达示意方向；未使用真实站点平面图、出口通行能力或实时客流，不可用于实际疏散安排。</span>
+          </div>
+        </article>
+
+        <div class="risk-disclaimer">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 21 20H3L12 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 9v4.5m0 3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span><strong>重要说明：</strong>本工具使用简化的演示规则，不是经过专业验证的水文、地质或运营模型。评分阈值并非行业标准，不能替代专业评估、现场判断或应急指挥。</span>
+        </div>
+      </section>
+    </div>
+    <footer><span>单站情景原型 · 所有评估均可手动调整</span><span id="data-attribution">可选天气服务：Open-Meteo；联网查询只作参考</span></footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    const RISK_LEVELS = [
+      { name: "低", color: "#258b70", tint: "#eff9f5", border: "#d8eee5", description: "当前输入下，演示规则给出的相对风险较低。仍请结合现场情况判断。" },
+      { name: "中", color: "#c98625", tint: "#fff8eb", border: "#f2e4c4", description: "当前输入下，部分因素可能增加风险；此等级仅表示演示规则的相对判断。" },
+      { name: "高", color: "#db6d39", tint: "#fff3ed", border: "#f1ddd2", description: "多个因素叠加后演示分值偏高；这不是实际预警，请勿据此单独决策。" },
+      { name: "很高", color: "#d84f58", tint: "#fff0f1", border: "#f2d8da", description: "演示规则给出较高参考分值；请勿将其视为官方预警或真实风险预测。" }
+    ];
+
+    const byId = (id) => document.getElementById(id);
+    const inputIds = ["rain-intensity", "rain-duration", "depth", "entrances", "terrain", "soil", "drainage", "barrier", "passengers"];
+
+    function readInputs() {
+      const values = {};
+      for (const id of inputIds) {
+        const field = byId(id);
+        if (!field.checkValidity()) {
+          field.reportValidity();
+          throw new Error("请检查标出的输入范围。");
+        }
+        values[id] = Number(field.value);
+      }
+      values.city = byId("city").value.trim();
+      values.station = byId("station-name").value.trim();
+      return values;
+    }
+
+    function calculateAssessment(values) {
+      const rainfall = values["rain-intensity"];
+      const duration = values["rain-duration"];
+      const depth = values.depth;
+      const entrances = values.entrances;
+      const rainfallPoints = rainfall < 10 ? 0 : rainfall < 25 ? 1 : rainfall < 50 ? 2 : rainfall < 100 ? 3 : 4;
+      const durationPoints = duration < 1 ? 0 : duration < 3 ? 1 : duration < 6 ? 2 : duration < 12 ? 3 : 4;
+      const depthPoints = depth < 10 ? 0 : depth < 20 ? 1 : depth < 30 ? 2 : 3;
+      const entrancePoints = entrances <= 2 ? 0 : entrances <= 4 ? 1 : 2;
+      const factors = [
+        { label: "降雨", points: rainfallPoints, detail: `降雨 ${rainfall} 毫米/小时` },
+        { label: "持续时间", points: durationPoints, detail: `持续 ${duration} 小时` },
+        { label: "车站埋深", points: depthPoints, detail: `埋深 ${depth} 米` },
+        { label: "出入口", points: entrancePoints, detail: `${entrances} 个出入口` },
+        { label: "周边地势", points: values.terrain, detail: ["地势较高", "一般城市环境", "低洼或临近水体"][values.terrain] },
+        { label: "土壤透水", points: values.soil, detail: ["透水性较好", "一般透水性", "透水性较差"][values.soil] }
+      ];
+      const mitigation = [
+        { label: "排水", points: values.drainage, detail: ["排水较弱", "排水一般", "排水较强"][values.drainage] },
+        { label: "防汛设施", points: values.barrier, detail: ["设施较少或不明确", "防汛设施一般", "防汛设施较完善"][values.barrier] }
+      ];
+      const rawScore = factors.reduce((sum, factor) => sum + factor.points, 0) - mitigation.reduce((sum, factor) => sum + factor.points, 0);
+      const score = Math.max(0, rawScore);
+      const levelIndex = score <= 3 ? 0 : score <= 7 ? 1 : score <= 11 ? 2 : 3;
+      return { score, levelIndex, factors, mitigation };
+    }
+
+    function renderAssessment(values) {
+      const assessment = calculateAssessment(values);
+      const level = RISK_LEVELS[assessment.levelIndex];
+      const card = byId("risk-card");
+      card.style.setProperty("--risk-color", level.color);
+      card.style.setProperty("--risk-tint", level.tint);
+      card.style.setProperty("--risk-border", level.border);
+      byId("risk-level").textContent = `风险${level.name}`;
+      byId("risk-score").textContent = String(assessment.score);
+      byId("risk-description").textContent = level.description;
+      const chips = [
+        ...assessment.factors.filter((factor) => factor.points > 0).map((factor) => `${factor.label} +${factor.points}`),
+        ...assessment.mitigation.filter((factor) => factor.points > 0).map((factor) => `${factor.label} -${factor.points}`)
+      ];
+      if (chips.length === 0) chips.push("当前演示规则未检出加分因素");
+      byId("factor-list").replaceChildren(...chips.map((text, index) => {
+        const chip = document.createElement("span");
+        chip.className = `factor-chip${text.includes("-") ? " positive" : ""}`;
+        chip.textContent = text;
+        return chip;
+      }));
+      renderTrend(values, assessment);
+      renderStation(values, assessment);
+      byId("station-label").textContent = `${values.city ? `${values.city} · ` : ""}${values.station || "未命名车站"} · 示意`;
+    }
+
+    function createSvg(tag, attributes, text) {
+      const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, String(value));
+      if (text !== undefined) element.textContent = text;
+      return element;
+    }
+
+    function renderTrend(values, assessment) {
+      const svg = byId("trend-chart");
+      svg.replaceChildren();
+      const defs = createSvg("defs", {});
+      const gradient = createSvg("linearGradient", { id: "chartGradient", x1: "0", x2: "0", y1: "0", y2: "1" });
+      gradient.append(createSvg("stop", { offset: "0%", "stop-color": "#6eb6e8", "stop-opacity": ".28" }));
+      gradient.append(createSvg("stop", { offset: "100%", "stop-color": "#6eb6e8", "stop-opacity": ".015" }));
+      defs.append(gradient);
+      svg.append(defs);
+
+      const left = 45, right = 735, top = 18, bottom = 160;
+      const maxScore = 17;
+      for (let tick = 0; tick <= 16; tick += 4) {
+        const y = bottom - (tick / maxScore) * (bottom - top);
+        svg.append(createSvg("line", { x1: left, x2: right, y1: y, y2: y, class: "chart-grid" }));
+        svg.append(createSvg("text", { x: left - 12, y: y + 3, "text-anchor": "end", class: "chart-axis" }, String(tick)));
+      }
+      svg.append(createSvg("text", { x: 10, y: 15, class: "chart-axis" }, "分值"));
+
+      const points = [];
+      for (let hour = 1; hour <= 6; hour++) {
+        const scenario = { ...values, "rain-duration": Math.min(values["rain-duration"], hour) };
+        const projected = calculateAssessment(scenario);
+        points.push({
+          x: left + ((hour - 1) / 5) * (right - left),
+          y: bottom - (Math.min(projected.score, maxScore) / maxScore) * (bottom - top),
+          score: projected.score,
+          hour
+        });
+      }
+      const linePath = points.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ");
+      const areaPath = `${linePath} L ${right} ${bottom} L ${left} ${bottom} Z`;
+      svg.append(createSvg("path", { d: areaPath, class: "chart-fill" }));
+      svg.append(createSvg("path", { d: linePath, class: "chart-line" }));
+      points.forEach((point) => {
+        svg.append(createSvg("circle", { cx: point.x, cy: point.y, r: 4.5, class: "chart-point" }));
+        svg.append(createSvg("text", { x: point.x, y: point.y - 11, "text-anchor": "middle", class: "chart-axis" }, String(point.score)));
+        svg.append(createSvg("text", { x: point.x, y: bottom + 23, "text-anchor": "middle", class: "chart-axis" }, `第 ${point.hour} 小时`));
+      });
+      const level = RISK_LEVELS[assessment.levelIndex];
+      svg.setAttribute("aria-label", `当前情景参考分值 ${assessment.score} 分，未来六小时示意趋势；等级为风险${level.name}`);
+    }
+
+    function renderStation(values, assessment) {
+      const svg = byId("station-diagram");
+      svg.replaceChildren();
+      const defs = createSvg("defs", {});
+      const marker = createSvg("marker", { id: "arrowHead", markerWidth: 8, markerHeight: 8, refX: 6, refY: 3, orient: "auto", markerUnits: "strokeWidth" });
+      marker.append(createSvg("path", { d: "M0,0 L0,6 L7,3 z", fill: "#3b93d0" }));
+      defs.append(marker);
+      svg.append(defs);
+
+      const level = RISK_LEVELS[assessment.levelIndex];
+      const waterHeight = 10 + assessment.levelIndex * 9;
+      svg.append(createSvg("rect", { x: 0, y: 0, width: 760, height: 258, fill: "#f8fcff" }));
+      svg.append(createSvg("text", { x: 25, y: 28, class: "diagram-label", "font-weight": "700" }, "地面"));
+      svg.append(createSvg("line", { x1: 24, y1: 42, x2: 736, y2: 42, stroke: "#afc4d5", "stroke-width": 2, "stroke-dasharray": "6 5" }));
+      svg.append(createSvg("rect", { x: 220, y: 104, width: 315, height: 94, rx: 18, fill: "#edf5fb", stroke: "#cbddea", "stroke-width": 2 }));
+      svg.append(createSvg("rect", { x: 234, y: 117, width: 287, height: 68, rx: 12, fill: "#fff", stroke: "#dce9f2" }));
+      svg.append(createSvg("rect", { x: 234, y: 185 - waterHeight, width: 287, height: waterHeight, rx: 0, fill: level.color, opacity: ".20" }));
+      svg.append(createSvg("line", { x1: 244, y1: 153, x2: 511, y2: 153, stroke: "#9db3c5", "stroke-width": 3, "stroke-linecap": "round" }));
+      svg.append(createSvg("text", { x: 376, y: 140, "text-anchor": "middle", class: "diagram-label", "font-weight": "700" }, "站台 / 站厅（简化示意）"));
+      svg.append(createSvg("text", { x: 376, y: 174, "text-anchor": "middle", class: "diagram-small" }, `情景参考等级：风险${level.name}`));
+      svg.append(createSvg("text", { x: 376, y: 220, "text-anchor": "middle", class: "diagram-small" }, "地下空间"));
+
+      const entranceCount = Math.max(1, Math.min(3, values.entrances));
+      const entranceXs = entranceCount === 1 ? [375] : entranceCount === 2 ? [310, 445] : [275, 375, 475];
+      entranceXs.forEach((x, index) => {
+        const stationX = entranceCount === 1 ? 376 : x;
+        const topX = [135, 376, 617][index];
+        svg.append(createSvg("path", { d: `M ${stationX} 117 L ${stationX} 82 L ${topX} 82 L ${topX} 49`, fill: "none", stroke: "#98b8cf", "stroke-width": 8, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+        svg.append(createSvg("path", { d: `M ${stationX} 117 L ${stationX} 82 L ${topX} 82 L ${topX} 49`, fill: "none", stroke: "#f8fcff", "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+        svg.append(createSvg("path", { d: `M ${stationX} 163 L ${stationX} 103 L ${topX} 103 L ${topX} 60`, fill: "none", stroke: "#3b93d0", "stroke-width": 2.5, "stroke-dasharray": "5 4", "marker-end": "url(#arrowHead)" }));
+        svg.append(createSvg("rect", { x: topX - 22, y: 29, width: 44, height: 23, rx: 7, fill: "#e8f4fc", stroke: "#c9e0f1" }));
+        svg.append(createSvg("text", { x: topX, y: 44, "text-anchor": "middle", class: "diagram-small", fill: "#367bac" }, `出口 ${index + 1}`));
+      });
+      svg.append(createSvg("text", { x: 25, y: 240, class: "diagram-small" }, `输入出入口：${values.entrances} 个 · 图中最多展示 3 个示意出口`));
+      svg.append(createSvg("text", { x: 735, y: 240, "text-anchor": "end", class: "diagram-small" }, `站内客流：${values.passengers.toLocaleString("zh-CN")} 人（示意）`));
+      svg.setAttribute("aria-label", `${values.station || "单站"}简化示意图，风险等级为${level.name}，站内客流${values.passengers}人，显示${entranceCount}条出口方向示意`);
+    }
+
+    function evaluate() {
+      try {
+        renderAssessment(readInputs());
+      } catch (error) {
+        if (error.message !== "请检查标出的输入范围。") {
+          byId("weather-status").textContent = `评估未完成：${error.message}`;
+          byId("weather-status").className = "weather-state error";
+        }
+      }
+    }
+
+    function setWeatherStatus(message, kind) {
+      const status = byId("weather-status");
+      status.textContent = message;
+      status.className = `weather-state${kind ? ` ${kind}` : ""}`;
+    }
+
+    async function fetchWeather() {
+      const city = byId("city").value.trim();
+      if (!city) {
+        setWeatherStatus("请先填写城市名称，再查询天气。", "error");
+        byId("city").focus();
+        return;
+      }
+      const button = byId("weather-button");
+      button.disabled = true;
+      setWeatherStatus(`正在查询“${city}”的未来降雨…`);
+      try {
+        const geoUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
+        geoUrl.search = new URLSearchParams({ name: city, count: "1", language: "zh", format: "json" });
+        const geoResponse = await fetch(geoUrl, { signal: AbortSignal.timeout(12000) });
+        if (!geoResponse.ok) throw new Error(`城市查询服务返回 ${geoResponse.status}`);
+        const geoData = await geoResponse.json();
+        const place = geoData.results && geoData.results[0];
+        if (!place) throw new Error("没有找到该城市，请检查名称或改用手动填写");
+
+        const forecastUrl = new URL("https://api.open-meteo.com/v1/forecast");
+        forecastUrl.search = new URLSearchParams({
+          latitude: String(place.latitude),
+          longitude: String(place.longitude),
+          hourly: "precipitation",
+          forecast_days: "1",
+          timezone: "UTC"
+        });
+        const forecastResponse = await fetch(forecastUrl, { signal: AbortSignal.timeout(12000) });
+        if (!forecastResponse.ok) throw new Error(`天气服务返回 ${forecastResponse.status}`);
+        const forecast = await forecastResponse.json();
+        if (!forecast.hourly || !Array.isArray(forecast.hourly.time) || !Array.isArray(forecast.hourly.precipitation)) {
+          throw new Error("天气服务返回的数据格式不完整。");
+        }
+        const currentHour = new Date().toISOString().slice(0, 13);
+        let start = forecast.hourly.time.findIndex((time) => time.slice(0, 13) >= currentHour);
+        if (start < 0) start = 0;
+        const nextHours = forecast.hourly.precipitation.slice(start, start + 6);
+        if (nextHours.length === 0 || nextHours.some((amount) => !Number.isFinite(Number(amount)))) {
+          throw new Error("没有可用的未来逐小时降雨数据。");
+        }
+        const peak = Math.max(...nextHours.map(Number));
+        const rainyHours = nextHours.filter((amount) => Number(amount) >= 0.1).length;
+        byId("rain-intensity").value = String(Math.min(300, Math.round(peak * 10) / 10));
+        byId("rain-duration").value = String(rainyHours);
+        evaluate();
+        const placeName = [place.name, place.admin1, place.country].filter(Boolean).join(" · ");
+        setWeatherStatus(`已载入 ${placeName} 未来 6 小时降雨参考；峰值 ${peak.toFixed(1)} 毫米/小时。参数仍可手动修改。`, "success");
+      } catch (error) {
+        setWeatherStatus(`天气查询失败：${error.message || "网络请求未完成"}。仍可手动填写天气并评估。`, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    byId("evaluate-button").addEventListener("click", evaluate);
+    byId("weather-button").addEventListener("click", fetchWeather);
+    for (const id of inputIds) {
+      byId(id).addEventListener("change", evaluate);
+    }
+    byId("station-name").addEventListener("change", evaluate);
+    byId("city").addEventListener("change", evaluate);
+    evaluate();
+  </script>
+</body>
+</html>
